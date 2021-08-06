@@ -1,0 +1,230 @@
+---
+title: "Tugas Besar FSD"
+author: "Kevin Pratama Putra (18523064) / Rizqi Edining Wicaksono (18523117)"
+output: html_document
+---
+## Cancer Breast
+
+Dataset yang kami gunakan untuk Tugas besar ini adalah tentang klasifikasi dari data-data yang ada seberapa berpengaruhnya data tersebut untuk mendiagnosis kankernya apakah ganas atau jinak.  
+DataSet ini Didapat Dari Website : <https://www.kaggle.com/uciml/breast-cancer-wisconsin-data>.
+
+```{r}
+dataset <- read.csv("C:/data.csv" ,sep="," ,header=TRUE)
+```
+
+## Informasi Dataset
+Dataset ini mempunyai 31 Yang dimana 1 nya adalah target variable yaitu "Diagnosis"
+Berikut adalah keterangan dari Target Variabel dan fitur yang ada pada dataset:
+
+
+1.Diagnosis (M= Malignatn, B = Benign)
+
+Sepuluh fitur yang bernilai untuk dihitung setiap jenisnya :
+
+
+1. radius (ata-rata jarak dari pusat ke titik-titik pada garis keliling)
+
+
+2. texture (deviasi standar dari nilai skala abu-abu)
+
+
+3. perimeter
+
+
+4. area
+5. smoothness (variasi lokal dalam panjang radius)
+
+
+6. compactness (keliling ^ 2 / luas - 1,0
+
+
+7. concavity (tingkat keparahan bagian cekung dari kontur)
+
+
+8. concave points (jumlah bagian cekung dari kontur)
+
+
+9. symmetry
+
+
+10. fractal dimension ("perkiraan garis pantai" - 1)
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Visualisasi Sebaran Data Menggunakan Histogram
+
+Dibawah ini adalah 10 gambaran histogram dari sebaran data bagian mean
+
+#### 1. Menampilkan histogram dari radius_mean yang ada di dataset
+```{r dataset$radius_mean}
+hist(dataset$radius_mean)
+```
+
+#### 2. Menampilkan histogram dari texture_mean yang ada di dataset
+```{r dataset$texture_mean}
+hist(dataset$texture_mean)
+```
+
+
+#### 3. Menampilkan histogram dari perimeter_mean yang ada di dataset
+```{r dataset$perimeter_mean}
+hist(dataset$perimeter_mean)
+```
+
+#### 4. Menampilkan histogram dari area_mean yang ada di dataset
+```{r}
+hist(dataset$area_mean)
+```
+
+#### 5. Menampilkan histogram dari smoothness_mean yang ada di dataset
+```{r}
+hist(dataset$smoothness_mean)
+```
+
+#### 6. Menampilkan histogram dari compacness_mean yang ada di dataset
+```{r}
+hist(dataset$compactness_mean)
+```
+
+#### 7. Menampilkan histogram dari concavity_mean yang ada di dataset
+
+```{r}
+hist(dataset$concavity_mean)
+```
+
+#### 8. Menampilkan histogram dari concave.points_mean yang ada di dataset
+```{r}
+hist(dataset$concave.points_mean)
+```
+
+#### 9. Menampilkan histogram dari symetry_mean yang ada di dataset
+```{r}
+hist(dataset$symmetry_mean)
+```
+
+#### 10.Menampilkan histogram dari dimension_mean yang ada di dataset
+```{r}
+hist(dataset$fractal_dimension_mean)
+```
+
+## 2.Pre Processing Data
+
+Fungsi 'head' disini untuk menampilkan data teratas yang paling berpengaruh terhadap perubahan  diagnosis
+```{r}
+head(dataset)
+```
+
+#### Encoding Categorical Pada Target Variable
+
+Melakukan encoding categorical pada Target Variabel karena model Logistic regression hanya menerima input berupa data numerik maka dari itu Encoding categorical ini dibutuhkan untuk mengubah dari categorical menjadi data numerik.
+
+
+```{r}
+dataset$diagnosis = factor(dataset$diagnosis,
+                           levels = c('M','B'),
+                           labels = c(0,1))
+
+table (dataset$diagnosis)
+```
+Dari gambar table diatas menunjukkan bahwa terdapat 212 Terdiagnosis Malignt(M) dan sebanyak 357 Benign(B)
+
+```{r}
+head(dataset)
+```
+
+Pada fitur 'id' dan 'X' kompenen tidak dibutuhkan dalam mennentukan pemodelan sehingga perlu menghapus fitur 'id' dan 'X' 
+
+```{r}
+dataset$id <- NULL
+dataset$X <- NULL
+```
+
+##### Memisahkan data set menjadi training set dan test set
+
+Setelah melakukan penghapusan pada kompenen yang tidak diperlukan selanjutnya membagi dataset 'training set' dan 'test set' yang dimana 'training set' digunakan untuk melatih model  dan 'test set' digunakan untuk mengvaluasi model yang digunakan
+
+
+```{r}
+library(caTools)
+
+set.seed(123)
+split = sample.split(dataset$diagnosis, SplitRatio=2/3)
+#Training Set
+training_set = subset(dataset, split == TRUE)
+#Test_Set
+test_set = subset(dataset, split == FALSE)
+```
+
+Berikut hasil dari dataset yang telah dipisah
+
+
+```{r}
+head(test_set)
+```
+
+```{r}
+head(training_set)
+```
+
+
+## 3. Feature Scaling 
+
+Perlu dilakukan Scalling agar setiap fitur yang ada di 'training_set' dan 'test_set' nilainya sama sehingga satu fitur dan fitur lainnya tidak ada yang mendominasi
+
+
+```{r}
+training_set[, 2:31] = scale(training_set[, 2:31]) 
+test_set[,2:31] = scale(test_set[, 2:31])
+```
+
+Berikut adalah Hasil Dari Scaling Dari Training_Set dan Test_Set yang dimana beberapa angkanya menjadi minus
+```{r}
+head(training_set)
+```
+
+
+```{r}
+head(test_set)
+```
+
+## 4. Melakukan pemodelan dengan Logistic Regression
+
+Setelah melakukan scaling selanjutnya melakukan pelatihan terhadap model yang digunakan yaitu Logistic Regresstion pada data 'training_set'
+
+
+
+```{r}
+classifier = glm(formula = diagnosis ~.,
+                 family= binomial,
+                 data = training_set)
+```
+
+## 5. Melakukan Evaluasi pada model Logistic Regresstion
+
+Setelah melakukan pengujian pada model 'training_set' selanjutanya perlu dilakukan evaluasi pada model yang digunakan pada data  **test_set** dengan memprekdisi data dari 'test_set'
+
+
+```{r}
+prob_pred = predict(classifier, type = 'response', newdata = test_set[,2:31])
+y_pred = ifelse(prob_pred > 0.5,1,0)
+
+```
+
+
+```{r}
+head(prob_pred)
+```
+
+
+Selanjutnya membandingkan hasil prekdisi dengan hasil asli dari data  'test_set'  menggunakan confusion matrix
+
+```{r}
+library(caret)
+confusionMatrix(table(y_pred, test_set[,1]))
+```
+
+
+'confusion matrix' diatas menjelaskan bahwa dengan model logistic regression berhasil memprediksi 'dataset$diagnosis' dengan 'test_set' dengan akurasi kesesuaian dengan 'dataset' aslinya sebesar 93%
+
